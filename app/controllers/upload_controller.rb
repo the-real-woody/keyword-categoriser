@@ -1,4 +1,3 @@
-require 'csv'
 require "json"
 require "ibm_watson/authenticators"
 require "ibm_watson/natural_language_understanding_v1"
@@ -10,7 +9,7 @@ class UploadController < ApplicationController
 
   def import
     myfile = params[:file]
-    categorised = []
+    @categorised = ["Keyword", "Category", "Search Volume"]
     CSV.foreach(myfile.path, headers: true) do |row|
       authenticator = IBMWatson::Authenticators::IamAuthenticator.new(
         apikey: "PUTXECjlQk8hxh0UFrZldBVLOd_TB_UpMrxlMoikhYAQ"
@@ -28,9 +27,13 @@ class UploadController < ApplicationController
         language: "en"
       )
       unless response.result["categories"].blank?
-        categorised << [row[0], response.result["categories"][0]["label"], row[1]]
+        @categorised << [row[0], response.result["categories"][0]["label"], row[1]]
       end
     end
-    @display = categorised
+
+    respond_to do |format|
+      format.html
+      format.csv { send_data @categorised.to_csv }
+    end
   end
 end
